@@ -1,0 +1,32 @@
+volumes:
+  pg_1_data:
+    driver: local
+
+services:
+  pg-1:
+    image: bitnami/postgresql-repmgr:14
+    network_mode: "host"
+    container_name: "pgrepmgr1"
+    ports:
+      - 5432
+    env_file:
+      - ../env/pgs.env
+    environment:
+      - REPMGR_PRIMARY_HOST=pg-0
+      - REPMGR_PRIMARY_PORT=5432
+      - REPMGR_PARTNER_NODES=pg-0:5432,pg-1:5432
+      - REPMGR_NODE_NAME=pg-1
+      - REPMGR_NODE_NETWORK_NAME=pg-1
+      - REPMGR_PORT_NUMBER=5432
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "127.0.0.1", "-p", "5432"]
+      interval: 30s  # 每 30 秒执行一次检查
+      timeout: 10s   # 10 秒内必须响应
+      retries: 5     # 连续 5 次失败则认为服务不健康
+      start_period: 15s  # 在服务启动后的 15 秒内不执行健康检查
+    volumes:
+      - pg_1_data:/bitnami/postgresql
+    restart: unless-stopped
+    extra_hosts:
+      - "pg-0:172.21.139.222"
+      - "pg-1:172.21.139.221"
